@@ -20,6 +20,7 @@ import time
 import logging
 import urllib.request
 import urllib.error
+import ssl
 from urllib.parse import urlparse
 
 from multiprocessing import Pool
@@ -28,28 +29,28 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
 
-def get_image_links(main_keyword, supplemented_keywords, link_file_path, num_requested = 1000):
+def get_image_links(main_keyword, supplemented_keyword, link_file_path, num_requested = 1000):
     """get image links with selenium
     
     Args:
         main_keyword (str): main keyword
-        supplemented_keywords (list[str]): list of supplemented keywords
+        supplemented_keyword (str): lsupplemented keyword
         link_file_path (str): path of the file to store the links
         num_requested (int, optional): maximum number of images to download
     
     Returns:
         None
     """
-    number_of_scrolls = int(num_requested / 400) + 1 
+    number_of_scrolls = int(num_requested / 400) + 1
     # number_of_scrolls * 400 images will be opened in the browser
 
     img_urls = set()
-    driver = webdriver.Firefox()
+    driver = webdriver.Chrome()
     for i in range(len(supplemented_keywords)):
-        search_query = main_keyword + ' ' + supplemented_keywords[i]
+        search_query = main_keyword + ' ' + supplemented_keyword
         url = "https://www.google.com/search?q="+search_query+"&source=lnms&tbm=isch"
         driver.get(url)
-        
+
         for _ in range(number_of_scrolls):
             for __ in range(10):
                 # multiple scrolls needed to show all 400 images
@@ -136,37 +137,18 @@ def download_images(link_file_path, download_dir, log_dir):
                 logging.error('Unexpeted error while downloading image {0}error type:{1}, args:{2}'.format(link, type(e), e.args))
                 continue
 
+def initssl():
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 if __name__ == "__main__":
-    main_keywords = ['neutral', 'angry', 'surprise', 'disgust', 'fear', 'happy', 'sad']
+    main_keywords = ['swimmer']
 
-    supplemented_keywords = ['facial expression',\
-                'human face',\
-                'face',\
-                'old face',\
-                'young face',\
-                'adult face',\
-                'child face',\
-                'woman face',\
-                'man face',\
-                'male face',\
-                'female face',\
-                'gentleman face',\
-                'lady face',\
-                'boy face',\
-                'girl face',\
-                'American face',\
-                'Chinese face',\
-                'Korean face',\
-                'Japanese face',\
-                'actor face',\
-                'actress face'\
-                'doctor face',\
-                'movie face'
-                ]
+    supplemented_keywords = ['butterfly', 'freestyle', 'backstroke', 'kickstroke']
 
-    download_dir = './data/'
-    link_files_dir = './data/link_files/'
+    download_dir = './google_image/'
+
+    initssl()
+    link_files_dir = './google_image/link_files/'
     log_dir = './logs/'
 
     ###################################
@@ -176,16 +158,15 @@ if __name__ == "__main__":
     # for keyword in main_keywords:
     #     link_file_path = link_files_dir + keyword
     #     get_image_links(keyword, supplemented_keywords, link_file_path)
-    
 
     # multiple processes
-    p = Pool(3) # default number of process is the number of cores of your CPU, change it by yourself
-    for keyword in main_keywords:
-        p.apply_async(get_image_links, args=(keyword, supplemented_keywords, link_files_dir + keyword))
+    p = Pool() # default number of process is the number of cores of your CPU, change it by yourself
+    for i in range(len(supplemented_keywords)):
+        p.apply_async(get_image_links, args=(main_keywords[0], supplemented_keywords[i], link_files_dir + supplemented_keywords[i]))
     p.close()
     p.join()
     print('Fininsh getting all image links')
-    
+
     ###################################
     # download images with link file
     ###################################
@@ -193,7 +174,7 @@ if __name__ == "__main__":
     # for keyword in main_keywords:
     #     link_file_path = link_files_dir + keyword
     #     download_images(link_file_path, download_dir)
-    
+
     # multiple processes
     p = Pool() # default number of process is the number of cores of your CPU, change it by yourself
     for keyword in main_keywords:

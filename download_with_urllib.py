@@ -136,10 +136,6 @@ def initssl():
     ssl._create_default_https_context = ssl._create_unverified_context
 
 
-def sleepFunc():
-    print(format(os.getpid()))
-    time.sleep(5)
-
 
 if __name__ == '__main__':
     main_keywords = ['swimmer']
