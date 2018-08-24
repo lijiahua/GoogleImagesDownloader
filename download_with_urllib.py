@@ -13,7 +13,7 @@
 # allow single process or multiple processes for downloading
 ####################################################################################################################
 
-
+import ssl
 import os
 import time
 import re
@@ -24,9 +24,9 @@ import urllib.error
 from multiprocessing import Pool
 from user_agent import generate_user_agent
 
-
 log_file = 'download.log'
-logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode="a+", format="%(asctime)-15s %(levelname)-8s  %(message)s")
+logging.basicConfig(level=logging.DEBUG, filename=log_file, filemode="a+",
+                    format="%(asctime)-15s %(levelname)-8s  %(message)s")
 
 
 def download_page(url):
@@ -42,7 +42,7 @@ def download_page(url):
         headers = {}
         headers['User-Agent'] = generate_user_agent()
         headers['Referer'] = 'https://www.google.com'
-        req = urllib.request.Request(url, headers = headers)
+        req = urllib.request.Request(url, headers=headers)
         resp = urllib.request.urlopen(req)
         return str(resp.read())
     except Exception as e:
@@ -68,94 +68,87 @@ def parse_page(url):
             logging.info('get 0 links from page {0}'.format(url))
             return set()
         else:
+            print("get %d links from page %s" % (len(link_list), format(url)))
             return set(link_list)
     else:
         return set()
 
 
-def download_images(main_keyword, supplemented_keywords, download_dir):
+def download_images(main_keyword, supplemented_keyword, download_dir):
     """download images with one main keyword and multiple supplemented keywords
     
     Args:
         main_keyword (str): main keyword
-        supplemented_keywords (list[str]): list of supplemented keywords
+        supplemented_keyword (str): supplemented keyword
     
     Returns:
         None
-    """  
-    image_links = set()
+    """
+
     print('Process {0} Main keyword: {1}'.format(os.getpid(), main_keyword))
 
     # create a directory for a main keyword
-    img_dir =  download_dir + main_keyword + '/'
-    if not os.path.exists(img_dir):
-        os.makedirs(img_dir)
+    root_dir = os.path.join(download_dir, main_keyword)
+    if not os.path.exists(root_dir):
+        os.makedirs(root_dir)
 
-    for j in range(len(supplemented_keywords)):
-        print('Process {0} supplemented keyword: {1}'.format(os.getpid(), supplemented_keywords[j]))
-        search_query = (main_keyword + ' ' + supplemented_keywords[j]).replace(' ','%20')
-        # url = 'https://www.google.com/search?q=' + search_query + '&espv=2&biw=1366&bih=667&site=webhp&source=lnms&tbm=isch&sa=X&ei=XosDVaCXD8TasATItgE&ved=0CAcQ_AUoAg'
-        url = 'https://www.google.com/search?q=' + search_query + '&source=lnms&tbm=isch'
-        image_links = image_links.union(parse_page(url))
-        print('Process {0} get {1} links so far'.format(os.getpid(), len(image_links)))
-        time.sleep(2)
-    print ("Process {0} get totally {1} links".format(os.getpid(), len(image_links)))
+    supplemented_keyword_dir = os.path.join(root_dir, supplemented_keyword)
 
-    print ("Start downloading...")
+    if not os.path.exists(supplemented_keyword_dir):
+        os.makedirs(supplemented_keyword_dir)
+
+    print('Process {0} supplemented keyword: {1}'.format(os.getpid(), supplemented_keyword))
+    search_query = (main_keyword + ' ' + supplemented_keyword).replace(' ', '%20')
+
+    url = 'https://www.google.com/search?q=' + search_query + '&source=lnms&tbm=isch'
+    image_links = parse_page(url)
+    print('Process {0} get {1} links for {2}'.format(os.getpid(), len(image_links), supplemented_keyword))
+
+    print("Start downloading...")
     count = 1
     for link in image_links:
         try:
-            req = urllib.request.Request(link, headers = {"User-Agent": generate_user_agent()})
+            req = urllib.request.Request(link, headers={"User-Agent": generate_user_agent()})
             response = urllib.request.urlopen(req)
             data = response.read()
-            file_path = img_dir + '{0}.jpg'.format(count)
-            with open(file_path,'wb') as wf:
+            file_path = os.path.join(supplemented_keyword_dir, '{0}.jpg'.format(count))
+            with open(file_path, 'wb') as wf:
                 wf.write(data)
-            print('Process {0} fininsh image {1}/{2}.jpg'.format(os.getpid(), main_keyword, count))
+            print('Process {0} fininsh image {1}/{2}.jpg'.format(os.getpid(), supplemented_keyword, count))
             count += 1
         except urllib.error.URLError as e:
             logging.error('URLError while downloading image {0}\nreason:{1}'.format(link, e.reason))
             continue
         except urllib.error.HTTPError as e:
-            logging.error('HTTPError while downloading image {0}\nhttp code {1}, reason:{2}'.format(link, e.code, e.reason))
+            logging.error(
+                'HTTPError while downloading image {0}\nhttp code {1}, reason:{2}'.format(link, e.code, e.reason))
             continue
         except Exception as e:
-            logging.error('Unexpeted error while downloading image {0}\nerror type:{1}, args:{2}'.format(link, type(e), e.args))
+            logging.error(
+                'Unexpeted error while downloading image {0}\nerror type:{1}, args:{2}'.format(link, type(e),
+                                                                                               e.args))
             continue
 
     print("Finish downloading, total {0} errors".format(len(image_links) - count))
-    
+
+
+def initssl():
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+
+def sleepFunc():
+    print(format(os.getpid()))
+    time.sleep(5)
 
 
 if __name__ == '__main__':
-    main_keywords = ['neutral', 'angry', 'surprise', 'disgust', 'fear', 'happy', 'sad']
+    main_keywords = ['swimmer']
 
-    supplemented_keywords = ['facial expression',\
-                'human face',\
-                'face',\
-                'old face',\
-                'young face',\
-                'adult face',\
-                'child face',\
-                'woman face',\
-                'man face',\
-                'male face',\
-                'female face',\
-                'gentleman face',\
-                'lady face',\
-                'boy face',\
-                'girl face',\
-                'American face',\
-                'Chinese face',\
-                'Korean face',\
-                'Japanese face',\
-                'actor face',\
-                'actress face'\
-                'doctor face',\
-                'movie face'
-                ]
+    supplemented_keywords = ['butterfly', 'freestyle', 'backstroke', 'kickstroke']
 
-    download_dir = './data/'
+    download_dir = './google_image/'
+
+    initssl()
 
     # download with single process
     # for i in range(len(main_keywords)):
@@ -163,10 +156,12 @@ if __name__ == '__main__':
 
 
     # download with multiple process
-    p = Pool() # number of process is the number of cores of your CPU
-    for i in range(len(main_keywords)):
-        p.apply_async(download_images, args=(main_keywords[i], supplemented_keywords, download_dir))
+    p = Pool()  # number of process is the number of cores of your CPU
+
+    # for i in range(len(supplemented_keywords)):
+    #     p.apply_async(sleepFunc)
+    for i in range(len(supplemented_keywords)):
+        p.apply_async(download_images, args=(main_keywords[0], supplemented_keywords[i], download_dir))
     p.close()
     p.join()
     print('All fininshed')
-

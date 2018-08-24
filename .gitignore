@@ -2,3 +2,8 @@
 *.json
 data/
 logs/
+/.idea/GoogleImagesDownloader.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/workspace.xml
+/google_image
