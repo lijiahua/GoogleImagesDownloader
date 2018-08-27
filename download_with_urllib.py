@@ -138,9 +138,9 @@ def initssl():
 
 
 if __name__ == '__main__':
-    main_keywords = ['swimmer']
+    main_keywords = ['swim']
 
-    supplemented_keywords = ['butterfly', 'freestyle', 'backstroke', 'kickstroke']
+    supplemented_keywords = ['butterfly', 'freestyle', 'backstroke', 'breaststroke']
 
     download_dir = './google_image/'
 
