@@ -29,7 +29,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
 
-def get_image_links(main_keyword, supplemented_keyword, link_file_path, num_requested=1000):
+def get_image_links(main_keyword, supplemented_keyword, link_file_path, num_requested=100):
     """get image links with selenium
     
     Args:
@@ -55,15 +55,15 @@ def get_image_links(main_keyword, supplemented_keyword, link_file_path, num_requ
         for __ in range(10):
             # multiple scrolls needed to show all 400 images
             driver.execute_script("window.scrollBy(0, 1000000)")
-            time.sleep(2)
+            time.sleep(1)
         # to load next 400 images
-        time.sleep(5)
+        time.sleep(1)
         try:
-            driver.find_element_by_xpath("//input[@value='Show more results']").click()
+            # driver.find_element_by_xpath("//input[@value='Show more results']").click()
+            driver.find_element_by_xpath("//*[@id='smb']").click()
         except Exception as e:
             print("Process-{0} reach the end of page or get the maximum number of requested images".format(
                 supplemented_keyword))
-            break
 
     imges = driver.find_elements_by_xpath('//div[contains(@class,"rg_meta")]')
     for img in imges:
@@ -146,11 +146,13 @@ def initssl():
 
 
 if __name__ == "__main__":
-    main_keywords = ['swim']
+    main_keywords = ['swimmer']
 
-    supplemented_keywords = ['butterfly', 'freestyle', 'backstroke', 'breaststroke']
+    # main_keywords = ['sexy']
 
-    # supplemented_keywords = ['butterfly']
+    # supplemented_keywords = ['butterfly', 'freestyle', 'backstroke', 'breaststroke']
+
+    supplemented_keywords = ['butterfly']
 
     download_dir = './google_image/'
 
