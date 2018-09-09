@@ -29,7 +29,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
 
-def get_image_links(main_keyword, supplemented_keyword, link_file_path, num_requested=100):
+def get_image_links(main_keyword, supplemented_keyword, link_file_path, num_requested=1000):
     """get image links with selenium
     
     Args:
@@ -147,8 +147,6 @@ def initssl():
 
 if __name__ == "__main__":
     main_keywords = ['swimmer']
-
-    # main_keywords = ['sexy']
 
     # supplemented_keywords = ['butterfly', 'freestyle', 'backstroke', 'breaststroke']
 
